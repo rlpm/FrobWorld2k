@@ -1,0 +1,1302 @@
+                f  r  o  b  w  o  r  l  d  :  2  k
+
+              CS 351 S'03 Second Individual Project
+
+       		                         Due: Mon Mar 31 2:30 2003 
+                                        See (s11) for deliverables
+                    See (s13) for changes.  Document version 1.0.0
+			   Last revision: Mon Mar 10 02:27:53 2003
+
+-------------------------------------------------
+((s0)) Table of Contents
+ (s1)  Artificial Life Research
+ (s2)  Project overview
+ (s3)  FrobWorld:2K overview
+ (s4)  FrobWorld:2K spatial properties
+ (s5)  FrobWorld:2K temporal properties
+ (s6)  FrobWorld:2K life properties
+ (s7)  Commands and events
+ (s8)  Summary of parameters
+ (s9)  Efficiency requirements
+ (s10) Details about Frob genetics and reproduction
+ (s11) Deliverables
+ (s12) Available resources
+ (s13) Document Information
+
+CS351 Spring 2003 Individual Program 2
+
+-------------------------------------------------
+((s1))           Artificial Life Research:
+      Individual efficiency and ecological stability
+
+((s1.1)) Answer the following two questions, providing supporting
+data:
+
+((s1.1.1)) Q1: Over 50 runs, how many initially random populations
+	       of frobs survive for a specified number of days?
+
+((s1.1.2)) Q2: Of the populations that survive that long, what is
+	       the mean and standard deviation of their final
+	       metabolic rates?
+
+((s1.1.3)) Implementing the FrobWorld:2K program, described below,
+will be of value in answering these questions.  The 'specified
+number of days' is given by MAXSIMULATIONLENGTH (s8.2).
+
+((s1.2)) Summary of Proposed Research
+
+((s1.2.1)) There is a tradeoff between species that 'live fast and
+die young' and those that take a more measured approach to life.
+On the one hand, species with high metabolic rates may grow and
+therefore reproduce more rapidly than more sedate species, but on
+the other hand, such 'fast' species may be more likely to exhaust
+their environmental resources and become extinct.  This research
+investigates what can happen when fast and slow species compete
+head to head.
+
+-------------------------------------------------
+((s2)) Project Overview
+
+((s2.1)) There are several goals for this second individual
+project, including:
+
+ ((s2.1.1)) Work with C++ object inheritance hierarchies and
+  virtual functions in general;
+
+ ((s2.1.2)) Use a fast priority queue algorithm to implement a
+  discrete time simulation model (in this case, a digital world
+  called `FrobWorld');
+
+ ((s2.1.3)) Understand the difference between intrusive and
+  non-intrusive containers;
+
+ ((s2.1.4)) Use inheritance and virtual functions to implement
+  more flexible and extensible program structures, more or less
+  independent of any particular domain;
+
+ ((s2.1.5)) To flesh out, test, and consolidate our abilities to
+  manage the development of larger C++ programs;
+
+ ((s2.1.6)) To gain some experience refactoring our own code as
+  user requirements and needs evolve.
+
+ ((s2.1.7)) To dabble in artificial life research, play god, have
+  fun and try to blow our minds.
+
+-------------------------------------------------
+((s3)) FrobWorld:2K overview
+
+((s3.1)) FrobWorld:2K is a small `artificial life' model.  It
+involves tracing the lives of simple simulated herbivores called
+Frobs (s6.2.2) as they live and die and evolve over time on a
+two-dimensional grid of `locations' (s2.2).  The Frobs feed
+exclusively on Grasses (s6.2.2), which grow spontaneously in
+clumps and runs.
+
+((s3.2)) FrobWorld:2K is a simple asynchronous event model based
+on simulated `days'.  A priority queue is used to schedule objects
+for simulation in order of which object needs to act soonest.
+Each `living entity' in the world receives one opportunity to take
+an action when it reaches the top of a priority queue, and after
+it performs its action the entity has the opportunity to
+reschedule itself for some time in the future and reinsert itself
+into the priority queue.
+
+((s3.2.1)) A priority queue can efficiently find the object that
+wants to take action next.  Note that desired time might be
+significantly in the `simulated future' and so there is no need to
+simulate all the days between the current time and the time of the
+next action.  The clock can simply `jump' ahead.
+
+((s3.3)) The FrobWorld:2K world is a simple 2-dimensional grid.
+
+((s3.4)) A location in the grid can be empty, or can contain
+either one Frob or one Grass (except `border locations' (s4.2.2)
+are always empty).
+
+((s3.5)) Grasses are plants, and in addition to serving their own
+purposes they serve as the only food supply for Frobs.  Grasses
+increase in mass spontaneously over time.  When a Grass reaches a
+specific size, it splits in two, if there's a space available and
+there aren't too many Grasses already around (see (s6.2.2.2.3) for
+the exact conditions and (s6.2.2.1.2) for details of the
+reproduction process).
+
+((s3.6)) Frobs are herbivores, mobile creatures that will starve
+to death unless they eat Grasses frequently enough.  They are
+capable of sensing what is in the four grid locations immediately
+adjacent to them (north, south, east, and west; no diagonals), and
+their essential choice of action is to select one of those
+locations for an `interaction'.  The resulting interaction may
+lead to the Frob moving into that location, or perhaps to eating a
+Grass, or perhaps to hitting and damaging another Frob, depending on
+details.
+
+((s3.6.1)) Frobs possess a `genetic information' --- a simulated
+`genome' --- that determines what objects Frobs are attracted to.
+
+((s3.6.2)) The genome also specifies several other properties of
+Frob behavior.  See (s10).
+
+-------------------------------------------------
+((s4)) FrobWorld:2K spatial properties
+
+((s4.1)) Within the simulated world, each living creature in
+FrobWorld:2K always has a `location in space'.  Though some
+creatures (Frobs) move about, each creature is always in only one
+location at a time and no more that one creature is at any given
+location at a time.
+
+((s4.2)) Properties of locations
+
+((s4.2.1)) Each location has an address consisting of an x and y
+value within the grid.  x coordinates range from 0..GRIDCOLS-1
+and y coordinates range from 0..GRIDROWS-1.  (See (s8) for
+parameters GRIDCOLS and GRIDROWS).  Visually, x increases left to
+right, and y increases top to bottom, so the indexing scheme
+overall looks like:
+
+((s4.2.1.1))
+
+     (0,0)            (1,0)     ...     (GRIDCOLS-1,0)
+     (0,1)            (1,1)             (GRIDCOLS-1,1)
+      ...                                    ...
+(0,GRIDROWS-1)   (1,GRIDROWS-1) ... (GRIDCOLS-1,GRIDROWS-1)
+
+((s4.2.2)) The `border' locations of the grid are defined as those
+for which their x coordinate is 0 or GRIDCOLS-1, plus those for
+which their y coordinate is 0 or GRIDROWS-1.
+
+((s4.2.2.1)) The border locations are permanently empty.
+
+((s4.2.3)) Grid locations that are not border locations are called
+`interior' locations.
+
+((s4.2.3.1)) An interior location may be empty or may contain
+exactly one Frob or one Grass.
+
+((s4.3)) The Neighborhood
+
+((s4.3.1)) The `neighborhood' of an interior location 'c' consists
+of the four locations adjacent to 'c'.
+
+((s4.3.1.1)) For example, if 'c' was (12,1), the neighborhood of 'c'
+would be these four locations:
+
+                  (12,0)
+          (11,1)     c    (13,1)
+                  (12,2)
+
+((s4.3.1.2)) Note that a location is not considered to be in its
+own neighborhood.
+
+((s4.3.1.3)) Note that a location's neighborhood, as in this
+example, may include both interior locations and border locations.
+
+((s4.3.1.3.1)) (In (s4.3.1.1), the locations (11,0), (12,0), and
+(13,0) are definitely border locations, by the (s4.2.2)
+definitions.  (11,1) is definitely an interior location, and all
+the other locations in the neighborhood might be border or
+interior depending on the values of GRIDCOLS and GRIDROWS.)
+
+((s4.3.1.4)) (Since the `neighborhood' is only defined for
+interior locations, there's never a need to consider coordinates
+outside the ranges 0<=x<GRIDCOLS, 0<=y<GRIDROWS.  There is never a
+need to consider spatial coordinates `wrapping around'.)
+
+((s4.3.2)) The neighborhood of a living creature defines what it
+is able to sense, and where it is able to attempt to reproduce
+into.  For Frobs, it also determines where it is able to attempt
+to move.
+
+-------------------------------------------------
+((s5)) FrobWorld:2K temporal properties
+
+((s5.1)) In FrobWorld:2K, time is reckoned in terms of simulated
+`days'.  On each day, anywhere from zero to many `actions' can
+occur.  
+
+((s5.2)) When an action occurs, the `current creature' is given a
+turn to `live a little' -- Grasses growing a bit and perhaps
+reproducing, Frobs moving about and perhaps starving or eating or
+fighting or reproducing.
+
+((s5.3)) The living creatures receive their turns at living in
+whatever order they come off the priority queue: There is no
+assumption of FIFO or stability among creatures scheduled on the
+same day.
+
+((s5.3.1)) The essential operation of the simulation, modulo
+various small details, is this process:
+
+ ((s5.3.1.1)) If the priority queue is empty, stop.
+
+ ((s5.3.1.2)) Remove the top entry in the priority queue.  This
+  `current object' corresponds to some object that is scheduled to
+  run at a time at least as soon as any other object.
+
+ ((s5.3.1.3)) Advance the simulated clock to the scheduled time of
+  the current object.
+
+ ((s5.3.1.4)) Using a virtual function call, provide the current
+  object with a `TurnToLive' in which it can do whatever is
+  appropriate.
+
+ ((s5.3.1.5)) If the current object survives it may be rescheduled
+  for another action further in the future, and reinserted into
+  the priority queue.
+
+ ((s5.3.1.6)) Go to (s5.3.1.1).
+
+((s5.3.2)) Note that when the current object is a Frob, during its
+TurnToLive it might successfully eat a Grass (or kill some other
+Frob), and that object now must somehow be removed from the
+simulation.  In particular, such a Grass meal or Frob victim would
+have previously been in the priority queue awaiting its
+TurnToLive, but now that it is dead that TurnToLive must not occur.
+
+((s5.4)) Simulation initiation and termination
+
+((s5.4.1)) Initiation.  A simulation is initiated by an 'init'
+command (s7.2.3).
+
+((s5.4.1.1)) Beginning a simulation includes the following steps:
+
+((s5.4.1.1.1)) The grid is cleared to all empty locations.  All
+border locations are treated as if they are ROCKs for purposes of
+Frob action selection.
+
+((s5.4.1.1.2)) Grasses are created using the `Grass initial
+creation' rules (s6.2.2.1.1).
+
+((s5.4.1.1.3)) Frobs are created using the `Frob initial creation'
+rules (s6.2.3.1.1).
+
+((s5.4.1.1.4)) The simulated time is reset to 0 days.
+
+((s5.4.1.1.5)) Other miscellaneous initializations as needed.
+
+((s5.4.2)) Termination
+
+((s5.4.2.1)) A FrobWorld:2K simulation ends when the Frobs become
+extinct or MAXSIMULATIONLENGTH days is reached, whichever comes
+first. 
+
+((s5.4.2.2)) There may be other miscellaneous processing as needed at
+termination, for example to compute statistics.
+
+-------------------------------------------------
+((s6)) FrobWorld:2K life properties
+
+((s6.1)) Common properties of all life
+
+((s6.1.1)) Each creature in FrobWorld:2K, whether Grass or Frob,
+has all of the following attributes:
+
+ ((s6.1.1.1)) It has a location in the FrobWorld:2K spatial grid
+   (except perhaps for brief moments of processing during birth,
+   living, and death).
+
+ ((s6.1.1.2)) It has a position in the FrobWorld:2K priority queue
+   simulation schedule (except perhaps for brief moments of
+   processing during birth, living, and death).
+
+ ((s6.1.1.3)) It has a non-negative integer quantity called
+  `mass'.
+
+((s6.1.2)) When a creature is removed from the top of the priority
+queue and receives its `turn-to-live', each creature performs
+processing specific to its species.  The processing involves tasks
+like sensing the neighborhood (s4.3), gaining or losing mass,
+and possibly reproducing or dying.  See details below for Grass
+(s6.2.2.2) and Frobs (s6.2.3.2).
+
+((s6.2)) Species-specific properties
+
+((s6.2.1)) In addition to all the attributes and processes common
+(s6.1) to all living creatures in FrobWorld:2K, there are certain
+attributes and processes that are specific to each type of
+creature.
+
+((s6.2.1.1)) One major place of differentiation between the
+species is in the per-day `turn-to-live' processing (s5).  In
+addition, there are some differences in how creatures are created.
+
+=======================
+((s6.2.2)) Grass-specific properties
+
+((s6.2.2.0)) In addition to the properties Grass have by virtue of
+being living creatures, each Grass object also has an
+`UpdateInterval' that determines how often it `wakes up' and takes
+a turn to live.
+
+((s6.2.2.1)) Grass construction rules.  There are two
+circumstances in which Grasses are created: `Initial creation',
+and `Grass reproduction'.
+
+((s6.2.2.1.1)) When a Grass is created under the `initial
+creation' rule, the following rules apply:
+
+ ((s6.2.2.1.1.1)) The Grass is located in a random empty interior
+  location of the grid.
+
+ ((s6.2.2.1.1.2)) The UpdateInterval is set to
+  GRASSINITIALUPDATEINTERVAL (s8.2)
+
+ ((s6.2.2.1.1.3)) The Grass mass is set to a random value in
+  0..GRASSGENESISMASS-1.  (This random selection is done on a
+  per-created-Grass basis).
+
+ ((s6.2.2.1.1.4)) The Grass is first scheduled to run on the day
+  number selected at random in 0..UpdateInterval.  (This random
+  selection is done on a per-created-Grass basis).
+
+((s6.2.2.1.2)) When a Grass is created under the `Grass
+reproduction' rule, the following rules apply:
+
+ ((s6.2.2.1.2.1)) A `parent Grass' must be supplied.
+
+ ((s6.2.2.1.2.2)) An empty location adjacent to the parent Grass
+  must be supplied.  The newly Grass is located in that supplied
+  empty location.
+
+ ((s6.2.2.1.2.3)) The offspring Grass UpdateInterval is set to
+  GRASSINITIALUPDATEINTERVAL.
+
+ ((s6.2.2.1.2.4)) The offspring Grass mass is set equal to
+  GRASSBIRTHFRACTION times the parent Grass mass (rounded down to
+  the nearest lower integer).
+
+ ((s6.2.2.1.2.5)) The parent Grass mass is reduced by precisely the
+  offspring Grass mass computed in (s6.2.2.1.2.4).
+
+ ((s6.2.2.1.2.5.1)) Note that under some conditions, given the
+  version 1.0 Grass-related parameter settings, it is possible
+  that, _after_ step (s6.2.2.1.2.5) is done, a parent's mass
+  might _still_ be greater than GRASSBIRTHMASS.  Finding such a
+  set of conditions is left as an exercise for the interested
+  reader. 
+
+ ((s6.2.2.1.2.6)) The offspring Grass is added to the scheduler so
+  that it will run for its first time on the day number chosen at
+  random in the range now+1..now+1+UpdateInterval, with `now' is
+  the day number of the Grass birth.
+
+((s6.2.2.2)) Grass turn-to-live rules.  When it is a Grass turn to
+live, the following steps occur, in sequence:
+
+((s6.2.2.2.1)) The Grass `grows' (i.e., its mass increases).  The
+amount of mass increase is equal to the Grass's UpdateInterval
+multiplied by GRASSMASSFACTOR, and rounded down to the nearest
+integer.
+
+((s6.2.2.2.2)) If the Grass's mass is less than GRASSBIRTHMASS,
+nothing else happens during this Grass's current turn-to-live.
+
+((s6.2.2.2.3)) Otherwise, the Grass mass is greater than or equal
+to GRASSBIRTHMASS.  The Grass then scans its neighborhood (s4.3)
+and counts how many locations surrounding it contain other
+Grasses.  This `GrassCount' will range from 0..4.
+
+((s6.2.2.2.4)) If the GrassCount is either 0 or 1, AND there is at
+least one empty interior location in the neighborhood, an
+offspring Grass is created under the `Grass reproduction rule'
+(s6.2.2.1.2).  If there are multiple empty interior locations in
+the neighborhood, one of the empty interior locations is selected
+uniformly at random to hold the newly created Grass.  After the
+offspring Grass is created, this Grass reschedules itself for
+now+UpdateInterval, and then its turn-to-live then ends.
+
+((s6.2.2.2.5)) Note that neighboring border locations are NOT
+considered as potential reproduction locations in (s6.2.2.2.4).
+
+((s6.2.2.2.6)) If the Grass's mass is greater than or equal to
+GRASSBIRTHMASS, but the requirements of (s6.2.2.2.4) do NOT hold,
+then the following steps occur:
+
+((s6.2.2.2.6.1)) The Grass' mass is set equal to GRASSBIRTHMASS,
+
+((s6.2.2.2.6.2)) The Grass' UpdateInterval is doubled,
+
+((s6.2.2.2.6.3)) If the Grass' UpdateInterval is now greater than
+GRASSMAXUPDATEINTERVAL, its UpdateInterval is set to
+GRASSMAXUPDATEINTERVAL.
+
+((s6.2.2.2.6.4)) The Grass reschedules itself for
+now+UpdateInterval, and then its turn-to-live ends.
+
+=======================
+((s6.2.3)) Frob-specific properties
+
+((s6.2.3.0)) In addition to the properties Frobs have by virtue of
+being living creatures, each Frob object also has `Genome' (s10)
+that governs much of the frob's behavior.
+
+((s6.2.3.1)) Frob construction rules.  There are two circumstances
+in which Frobs are created: `Initial creation', and `Frob
+reproduction'.
+
+((s6.2.3.1.1)) When a Frob is created under the `initial creation'
+rule, the following rules apply:
+
+ ((s6.2.3.1.1.1)) The Frob is located in a random empty interior
+  location of the grid.
+
+ ((s6.2.3.1.1.2)) The Frob's mass is set to FROBGENESISMASS.
+
+ ((s6.2.3.1.1.3)) The Frob's Genome is initialized to random
+  genes.
+
+ ((s6.2.3.1.1.4)) The Frob is added to the scheduler so that it
+  will run on a day number randomly selected from the range
+  0..Genome(UpdateInterval) (s10.2.2.3).
+
+((s6.2.3.1.2)) When a Frob is created under the `Frob
+reproduction' rule, the following rules apply:
+
+ ((s6.2.3.1.2.1)) A `parent Frob' must be supplied.
+
+ ((s6.2.3.1.2.2)) An empty location adjacent to the parent Frob
+  must be supplied.  The newly created Frob is located in that
+  supplied empty location.
+
+ ((s6.2.3.1.2.3)) The offspring's Genome is initialized by copying
+  the parent's Genome.
+
+  ((s6.2.3.1.2.3.1)) The offspring's Genome is then `mutated' as
+   described in (s10.4).
+
+ ((s6.2.3.1.2.4)) The MassTransfer from parent to offspring Frob is
+  equal to the parent's Genome(BirthFraction) (s10.2.2.2) times the
+  parent's mass, rounded down to the nearest integer.
+
+ ((s6.2.3.1.2.5)) The parent Frob's mass is reduced by precisely the
+  offspring's initial mass computed in (s6.2.3.1.2.4).
+
+ ((s6.2.3.1.2.6)) The offspring Frob is added to the scheduler so that
+  it will run for the first time on the day number selected at
+  random in the range now+1..now+1+Genome(UpdateInterval), where
+  the offspring's Genome (which may not be the same as the
+  parent's) is used to determine the UpdateInterval.
+
+((s6.2.3.2)) Frob turn-to-live rules.  When it is a Frob's turn to
+live, the following steps occur, in sequence:
+
+((s6.2.3.2.1)) The Frob's mass is reduced by MassLoss, computed as
+(FROBMASSTAX*Genome(UpdateInterval)+FROBFIXEDOVERHEAD), rounded down
+to the nearest integer.
+
+((s6.2.3.2.1.1)) If the Frob's mass is now less than or equal to
+zero, it dies of starvation and is removed from the simulation
+(and perforce its turn-to-live ends).
+
+((s6.2.3.2.2)) Otherwise, the Frob selects a location in its
+neigborhood to interact with, based on its genetic preferences, as
+described in (s10.3).  The results of the action depend on the
+contents of the selected location as follows:
+
+((s6.2.3.2.2.1)) If the selected location contains a ROCK (is a
+border location), the Frob suffers a mass loss penalty of
+ROCKBUMPPENALTY.  If that penalty causing the Frob's mass to
+become less than or equal to zero, the Frob is destroyed (and its
+turn is over, of course).  Otherwise, the Frob remains where it is
+and it reschedules for another turn to live in the future as
+usual.
+
+((s6.2.3.2.2.2)) If the selected location is empty, the Frob moves
+into the selected location.  A `move' event is generated (s7.3.6)
+and the Frob reschedules as usual.
+
+((s6.2.3.2.2.3)) If the selected location contains a Grass, the
+Frob eats the Grass: 
+
+((s6.2.3.2.2.3.1)) A `kill' event is generated (s7.3.5) for the
+Grass. 
+
+((s6.2.3.2.2.3.2)) The Frob's mass is increased by mass of the
+Grass, up to a maximum of Genome(BirthMass).
+
+((s6.2.3.2.2.3.3)) The Grass is destroyed, leaving the selected
+location empty.
+
+((s6.2.3.2.2.3.4)) The Frob moves into the selected location,
+generating a `move' event.
+
+((s6.2.3.2.2.3.5)) If the Frob's mass is at its Genome(BirthMass),
+a new Frob is created using the `Frob reproduction rule'
+(s6.2.3.1.2), supplying the Frob itself as the parent and its own
+previous location (which is currently adjacent and empty) as the
+location of the offspring Frob.
+
+((s6.2.3.2.2.3.6)) Whether it reproduced or not, the Frob
+reschedules as usual.
+
+((s6.2.3.2.2.4)) If the selected location contains a Frob, the
+current Frob hits the selected location Frob: 
+
+((s6.2.3.2.2.4.1)) The selected location Frob's mass is reduced by
+FROBHITPENALTY.  Note: The current Frob does NOT gain that mass;
+it is simply lost.
+
+((s6.2.3.2.2.4.2)) If the selected location Frob's mass has become
+less than or equal to zero, it is destroyed (generating an
+appropriate `kill' event).
+
+((s6.2.3.2.2.4.3)) The current Frob remains in the same position.
+Whether the selected location Frob is destroyed or not, the
+current Frob does not move.
+
+-------------------------------------------------
+((s7)) Program details
+
+((s7.1)) Program basics
+
+((s7.1.1)) The program is named `fw2k'.
+
+((s7.1.2)) It is expected to be run with no command line arguments
+
+((s7.1.3)) When run, the program prints absolutely nothing; no
+greeting, no prompt, etc.
+
+((s7.1.4)) The program reads commands from cin and writes output
+events to cout.  The possible commands and their results are
+described in (s7.2); the possible output event formats and their
+meanings is described in (s7.3).
+
+((s7.2)) Command descriptions
+
+((s7.2.1)) Each command consists of a whitespace-delimited `command
+word' followed by zero or more whitespace-separated arguments that
+depend on the particular command.
+
+ ((s7.2.1.1)) Case is significant in command words.
+ ((s7.2.1.2)) Command words are never abbreviated.
+ ((s7.2.1.3)) Command words never contain any whitespace.
+
+((s7.2.2)) The possible command words are `init' (s7.2.3), `interval'
+(s7.2.4), `step' (s7.2.5), `quit' (s7.2.6), and `dump' (s7.2.7).
+
+((s7.2.2.1)) The program's behavior is undefined if an illegal command
+word or incorrect command arguments are provided.
+
+((s7.2.3)) Command word `init'
+
+((s7.2.3.1)) The init command is used to reset the simulator to begin
+a new simulation.
+
+((s7.2.3.2)) The format of an init command is:
+
+     init COLS ROWS SEED FROBCOUNT GRASSCOUNT
+
+where all command arguments are mandatory, all of type size_t, and
+have the following meanings:
+
+ ((s7.2.3.2.1)) COLS: Overall number of columns in the grid.  For
+  our purposes, this value must be specified as equal to GRIDCOLS.
+  Program behavior is undefined if a COLS value not equal to
+  GRIDCOLS is supplied.
+
+ ((s7.2.3.2.2)) ROWS: Overall number of rows in the grid.  For our
+  purposes, this value must be specified as equal to GRIDROWS.
+  Program behavior is undefined if a ROWS value not equal to
+  GRIDROWS is supplied.
+
+ ((s7.2.3.2.3)) SEED: The random number seed to use for this
+  simulation.  If the supplied value is 0, then a random seed --
+  preferably differing from one init command to the next -- should
+  be selected by the program, otherwise the supplied value is used
+  as the seed.
+
+ ((s7.2.3.2.4)) FROBCOUNT: The number of Frobs to create using the
+  `Frob initial creation' rules (s6.2.2.1.1).  
+
+ ((s7.2.3.2.5)) GRASSCOUNT: The number of Grasses to create using
+  the `Grass initial creation' rules (s6.2.3.1.1).
+
+((s7.2.3.2.6)) Program behavior is undefined if
+
+      FROBCOUNT+GRASSCOUNT>(COLS-2)*(ROWS-2).
+
+((s7.2.3.2.6.1)) In addition, for efficiency purposes, it is
+acceptable to assume that FROBCOUNT+GRASSCOUNT is much less than
+(COLS-2)*(ROWS-2).
+
+((s7.2.3.2.7)) As an example, the command `init 60 30 1 25 100' means
+`Build a 60x30 grid, use 1 as the random number seed, and start the
+simulation with 25 Frobs and 100 Grasses'.
+
+((s7.2.3.2.8)) Performing an init operation does the steps described
+in (s5.4.1), and generates a `reset' event (s7.3.2) to the output,
+followed by a series of `new' event (s7.3.3) (one for each of the
+FROBCOUNT+GRASSCOUNT creatures created), followed by a `clock' event
+(s7.3.4) as the simulated clock is reset to 0 days.
+
+((s7.2.4)) Command word `interval'
+
+((s7.2.4.1)) The interval command determines the `granularity' of
+the simulator's command processing behavior, determining the size
+of the `step' that the simulation performs at one time.
+
+((s7.2.4.2)) The format of an interval command is:
+
+     interval INTERVALDAYS
+
+where the command argument is mandatory, is of type size_t, and
+has the following meaning:
+
+ ((s7.2.4.2.1)) INTERVALDAYS: The number of simulated days of time to
+  perform in one chunk, before stopping to read further command input.
+  This is a number greater than zero.
+
+((s7.2.4.3)) When the program starts up, it should by default
+assume `interval 1' is in effect.
+
+((s7.2.4.4)) The primary purpose of the interval command is to
+define how many simulated days constitute one simulation `step'
+(s7.2.5).  Also, the number of days per step determines how often
+the simulation generates a `clock' event (s7.3.4).  A larger
+interval means less frequent clock events.
+
+((s7.2.5)) Command word `step'
+
+((s7.2.5.1)) The step command causes the simulator to execute for a
+specified number of intervals (where each interval consists of
+some number of days as discussed in (s7.2.4)).
+
+((s7.2.5.2)) The format of a step command is:
+
+     step INTERVALS DISPLAY
+
+where both command arguments are mandatory and have the following
+meanings:
+
+ ((s7.2.5.2.1)) INTERVALS: A size_t specifying the number of
+  simulated intervals of time to perform simulation before
+  reading any further commands.  This is a number greater than or
+  equal to zero.
+
+ ((s7.2.5.2.2)) DISPLAY: A bool (represented as either 0 or 1)
+  specifying whether 'new', 'move', and 'kill' events should be output
+  by your frobworld engine during the processing of this step.  If
+  DISPLAY is 1, those events should be output when they occur during
+  this step.  If DISPLAY is 0, those events should not be output
+  during this step, whether they occur or not.  (A 'clock' event
+  should still occur at the end of the interval, even if DISPLAY is
+  0.)
+
+((s7.2.5.3)) Simulating an interval repeats all the operations
+described in (s5.3) until the simulated clock reaches the next
+higher multiple of the INTERVALDAYS (from the `interval' command
+(s7.2.4)).  
+
+((s7.2.5.3.1)) A single `clock' event is generated at the end of each
+simulated interval, and the time it reports should always be a
+multiple of the INTERVALDAYS.  During the simulation within the
+interval, `new' (s7.3.3), `kill' (s7.3.5), and `move' (s7.3.6) events
+occur in varying numbers and sequences as appropriate reflecting the
+events of the day.
+
+((s7.2.5.3.2)) After each interval (or earlier if desired), a
+check is made to see if the simulation should be terminated
+(s5.4.2.1).  If it is, then an `extinct' (s7.3.7) event is
+generated, and any remaining intervals are skipped.  Note that
+the 'extinct' event should report the day at which the last frob
+died, not the end-of-interval day.
+
+((s7.2.5.4)) Otherwise, the entire interval simulation process
+(s7.2.5.3) is repeated INTERVALS times, and then the `step'
+command is complete.
+
+((s7.2.5.4.1)) For example, if the current simulated time is 117
+days, and the following commands are given:
+
+interval 10
+step 2 1
+
+then the following things will occur:
+
+((s7.2.5.4.1.1)) The simulation will be performed until the time
+reaches 120 (the next higher multiple of the interval size of
+10).  Events are output as appropriate while the simulation is
+running (because the step DISPLAY is set to true). 
+
+((s7.2.5.4.1.2)) A `clock { 120 }' event will be generated.  This
+completes the first of the two requested steps.
+
+((s7.2.5.4.1.3)) The simulation will be performed until the time
+reaches 130 (the next higher multiple of the interval size of
+10).  Events are output as appropriate while the simulation is
+running.
+
+((s7.2.5.4.1.3)) A `clock { 130 }' event will be generated.  This
+completes the second of the two requested steps.
+
+((s7.2.5.4.1.4)) The simulator reads another command from cin to
+determine what to do next.
+
+((s7.2.6)) Command word `quit'
+
+((s7.2.6.1)) The quit command causes the simulator to exit.
+
+((s7.2.7)) Command word `dump'
+
+((s7.2.6.1)) Processing a dump command causes the simulator to
+generate a `world' event (s7.3.8).
+
+((s7.2.6.2)) The dump command has no arguments.  Its format is:
+
+     dump
+
+((s7.3)) Event descriptions
+
+((s7.3.0)) Events are notices output to cout in a specific
+format, when certain things occur during the simulation.  
+
+((s7.3.1)) All events consist of a `event word' followed by
+optional event-specific values surrounded by curly braces ({}),
+and followed by a single newline.
+
+ ((s7.3.1.1)) Even if there are no event-specific values, the
+  curly-brackets must be included
+
+ ((s7.3.1.2)) Event words are case sensitive and must be printed in
+  lower-case.
+
+ ((s7.3.1.3)) Implementation warning: The event-ending newline
+  should be generated with `endl'.  Using `endl' is guaranteed to
+  flush the output buffer, so the display program will receive the
+  event, while outputting "\n" or anything else does not provide
+  that guarantee.
+
+((s7.3.2)) The `reset' event
+
+((s7.3.2.1)) The reset event is used to announce the major
+simulation parameters after an `init' command (s7.2.3).
+
+((s7.3.2.2)) The format of a reset event is:
+
+     reset { COLS ROWS SEED FROBCOUNT GRASSCOUNT }
+
+where all the event values are the same as the corresponding init
+command arguments described in (s7.2.3.2), except that the SEED
+event value reflects the actual seed used to start the random number
+generator, which won't match the init command SEED argument if that
+argument was specified as a 0.
+
+((s7.3.3)) The `new' event
+
+((s7.3.3.1)) The new event is used to announce the creation of a new
+creature in the world.  It is used for all different species of
+creatures and both for initial creations and reproductions.
+
+((s7.3.3.2)) The specific format of the new event depends what type
+of creature is being described; the general format is:
+
+   new { CREATURETYPE CREATURE-SPECIFIC-ARGS }
+
+((s7.3.3.2.1)) The new event for a Grass looks like:
+
+   new { grass X Y MASS UPDATEINTERVAL }
+
+where the event values mean:
+
+  ((s7.3.3.2.1.1)) X: The x coordinate (of a previously empty
+   location) where the new grass is created.
+
+  ((s7.3.3.2.1.2)) Y: The y coordinate (of a previously empty
+   location) where the new grass is created.
+
+  ((s7.3.3.2.1.2)) UPDATEINTERVAL: The current UpdateInterval of
+   the new grass (which will always be GRASSINITIALUPDATEINTERVAL
+   for newly created grasses).
+
+  ((s7.3.3.2.1.3)) MASS: The current Mass of the new grass.
+
+((s7.3.3.2.2)) The new event for a Frob looks like:
+
+   new { frob X Y MASS GENE0 GENE1 .. GENEDNALEN  }
+
+where the X, Y, and MASS event values mean the same as for a Grass
+(s7.3.3.2.1), and the GENE0 .. GENEDNALEN event values provide the
+DNALEN bytes of the Frob's genome data, expressed as decimal
+numbers from 0..255 each.
+
+((s7.3.4)) The `clock' event
+
+((s7.3.4.1)) The clock event is generated whenever an interval is
+completed.  In particular, it is generated both when the clock is
+reset to 0 (under the influence of an init command (s7.2.3)), and
+when the clock passes a multiple of the intervalsize (under the
+influence of a step command (s7.2.4)).
+
+((s7.3.4.2)) The format of a clock event is:
+
+   clock { DAYSPAST }
+
+where DAYSPAST, an unsigned int, indicates the clock reading as of the
+time the event was generated.
+
+((s7.3.5)) The `kill' event
+
+((s7.3.5.1)) The `kill' event is generated when a Grass is eaten or a
+Frob starves to death or dies by hit damage.
+
+((s7.3.5.2)) The format of a kill event is:
+
+   kill { CREATURETYPE CREATURE-SPECIFIC-ARGS }
+
+where the event values are the same as for the `new' event
+(s7.3.3.2).  Note the X and Y values in the kill message must
+correspond to where the creature was when it died.
+
+((s7.3.6)) The `move' event
+
+((s7.3.6.1)) The `move' event is generated when a Frob moves from
+one location to an adjacent previously-empty location
+
+((s7.3.6.2)) The format of a move event is:
+
+   move { OLDX OLDY NEWX NEWY }
+
+where the event values mean:
+
+  ((s7.3.6.2.1)) OLDX: The x coordinate (of a now empty location) the
+   creature moved out of.
+
+  ((s7.3.6.2.2)) OLDY: The y coordinate (of a now empty location) the
+   creature moved out of.
+
+  ((s7.3.6.2.3)) NEWX: The x coordinate (of a now occupied location)
+   the creature moved into.
+
+  ((s7.3.6.2.4)) NEWY: The y coordinate (of a now occupied location)
+   the creature moved into.
+
+((s7.3.7)) The `extinct' event
+
+((s7.3.7.1)) An `extinct' event is generated after a simulation
+interval when all the Frobs are dead or MAXSIMULATIONLENGTH days
+has been reached.
+
+((s7.3.7.2)) The format of an `extinct' event is:
+
+   extinct { DAYOFEXTINCTION OPTIONALDATA }
+
+where the event value means:
+
+  ((s7.3.7.2.0)) DAYOFEXTINCTION: The simulated day when the last
+   frob died.  Note that this value may or may not be a multiple
+   of the simulation interval.  
+
+  ((s7.3.7.2.1)) (This paragraph deleted.)
+  ((s7.3.7.2.2)) (This paragraph deleted.)
+  ((s7.3.7.2.3)) (This paragraph deleted.)
+
+  ((s7.3.7.2.4)) OPTIONALDATA: An arbitrary sequence of zero or
+   more bytes, in which none of the bytes are any of these three
+   characters: '{', '}', or '\'.  Any other byte values,
+   including for example spaces, are legal in OPTIONALDATA.
+
+  ((s7.3.7.2.4.1)) The supplied GUI driver program will output
+   any optional OPTIONALDATA it receives in an extinct event, but
+   will not otherwise process it, so there are few restrictions
+   on its content or use.
+   
+  ((s7.3.7.2.4.2)) The OPTIONALDATA is intended to provide an
+   output mechanism for whatever other information or statistics
+   about the simulation run that your fw2k has gathered, that you
+   wish to have reported at the end of a run.
+
+  ((s7.3.7.2.4.2.1)) Examples of other information you might wish
+   to report via OPTIONALDATA could include: the number of frobs
+   and/or grasses surviving to the end, or specific information
+   about the internals of surviving creatures, or what have you.
+
+  ((s7.3.7.2.4.2.2)) Note that by the format shown in (s7.3.7.2),
+   if the length of OPTIONALDATA is 0 bytes, then strictly
+   speaking there should be two spaces between the end of the
+   DAYOFEXTINCTION and the closing '}'.  As a special exception,
+   if the length of OPTIONALDATA is 0 bytes, it is acceptable to
+   have only one space between the end of the DAYOFEXTINCTION and
+   the closing '}'.
+
+((s7.3.8)) The `world' event
+
+((s7.3.8.1)) A `world' event is generated in response to a `dump'
+command (s7.2.7).  A world event describes the current status of
+the world and all the creatures in it, and is used by the GUI
+driver program to reestablish the correct display output after
+the simulation display has been turned off for some period of
+time.
+
+((s7.3.8.2)) The format of a `world' event is:
+
+   world { CLOCK CREATUREDESCRIPTIONS }
+
+where the event values mean:
+
+  ((s7.3.8.2.1)) CLOCK: An unsigned int indicating the clock
+   reading as of the time the event was generated.
+
+  ((s7.3.8.2.2)) CREATUREDESCRIPTIONS: A space-separated string
+   describing all the creatures currently living at time CLOCK.
+
+  ((s7.3.8.2.2.1)) The creature descriptions in
+   CREATUREDESCRIPTIONS may appear in whatever order is most
+   convenient to produce, so long as each creature living at time
+   CLOCK appears exactly once.
+
+  ((s7.3.8.2.2.2)) Each individual creature description in the
+   CREATUREDESCRIPTIONS consists of the same format as used for a
+   'new' event (s7.3.3.2), except that the description surrounded
+   by space-separated parentheses.  In other words, the format of
+   each individual creature description is:
+
+      ( CREATURETYPE CREATURE-SPECIFIC-ARGS )
+
+   where CREATURETYPE and CREATURE-SPECIFIC-ARGS have the same
+   meanings as in (s7.3.3).
+
+  ((s7.3.8.2.2.3)) A complete sample `world' event, describing
+   a(n extremely unlikely) situation, could be:
+
+world { 18550 ( frob 25 14 74 96 225 34 167 36 142 147 161 159 93 65 100 211 53 20 65 68 171 173 ) ( grass 50 26 128 30 ) }
+
+  ((s7.3.8.2.2.3.1)) In that example, the time is day 18550, and
+   there are only two creatures alive in the world (that's the
+   extremely unlikely part) -- one frob and one grass.  
+
+  ((s7.3.8.2.2.3.2)) The frob is located at (25,14) and has a
+   mass of 74 (and has nineteen other numbers describing its
+   genome).
+
+  ((s7.3.8.2.2.3.3)) The grass is located at (50,26), has a
+   mass of 128, and an update interval of 30.
+
+-------------------------------------------------
+((s8)) Summary of parameters
+
+((s8.1)) There are a lot of parameters that control the
+simulation.  The following declarations provide suggested names
+for them, and version 1.0 values for them.
+
+((s8.1.1)) Some of these values have CHANGED from the v0.9.0
+spec.  It is less likely, but possible, that they will change
+further. 
+
+((s8.1.2)) It is LIKELY that some of the numbers will change in
+ways that means they could have been eliminated, e.g., an additive
+constant becoming 0 or a multiplicative constant becoming 1, but
+nonetheless the simulation code must remain correct regardless of
+what the specific values are.
+
+((s8.1.3)) It is UNLIKELY, but POSSIBLE, that additional
+parameters will be added to this list.
+
+((s8.2)) Parameter names and version 1.0 parameter values.  NOTE:
+Parameters are to be treated as integers unless the supplied
+parameter value contains a decimal point, in which case the
+associated parameter is assumed to be type double.
+
+DNAMUTATIONODDSPERBYTE = 20   1-in-this chance of a bit flip per byte
+
+FROBFIXEDOVERHEAD = 1	      Frob fixed mass cost per action
+FROBGENESISMASS = 100	      Initial Frob mass
+FROBHITPENALTY = 10  	      Mass penalty when Frob hits Frob
+FROBMASSTAX = .15	      Frob mass loss per day
+
+GRASSBIRTHFRACTION = 0.4      Fraction of mass given to offspring
+GRASSBIRTHMASS = 30	      Mass at which Grasses wish to split
+GRASSCROWDLIMIT = 2           4-neighborhood Grass count for no splitting
+GRASSFIXEDOVERHEAD = 0	      Grass fixed mass cost per action
+GRASSGENESISMASS = 10	      Initial Grass mass
+GRASSINITIALUPDATEINTERVAL = 10   Initial Days between Grass activities
+GRASSMASSFACTOR = .20         Grass mass gain per day
+GRASSMAXUPDATEINTERVAL = 100  Max inactive days on failed splitting
+
+GRIDCOLS = 60                 World width     
+GRIDROWS = 30                 World height
+
+MAXSIMULATIONLENGTH = 100000  Days to stop even if frobs still live
+ROCKBUMPPENALTY = 30 	      Mass penalty when Frob hits Rock
+
+-------------------------------------------------
+((s9)) Efficiency requirements
+
+((s9.1)) Simulation programs often require large amounts of space
+and/or time, and so efficiency is often a central factor in
+simulation program design.
+
+((s9.1.1)) In the case of fw2k with parameters as defined in this
+spec, we want to be able to explore relatively long evolutionary
+histories (up to hundred of thousands or millions of simulated
+days) of relatively small populations of creatures (hundreds or
+thousands), so our primary concern is time efficiency.
+
+((s9.2)) fw2k implementations must operate within the following
+asymptotic space resource bounds:
+
+ ((s9.2.1)) O(n) space for n simultaneously living creatures.
+
+ ((s9.2.2)) O(w*h) space for a world of size w columns by h rows.  
+
+((s9.3)) fw2k implementations must operate within the following
+asymptotic time resource bounds:
+
+ ((s9.3.1)) O(log n) time to find the highest priority creature,
+  for n living creatures.
+
+ ((s9.3.2)) O(log n) time to add a creature to the schedule for a
+  future turn-to-live, for n living creatures.
+
+ ((s9.3.3)) O(log n) time to remove any given creature from the
+  turn-to-live schedule, for n living creatures.
+
+ ((s9.3.4)) O(log n) time to perform all needed processing for
+  the current creature's turn to live, for n living creatures.
+
+ ((s9.3.5)) O(n log n) time for an entire simulation in which n
+  turns-to-live occur.
+
+-------------------------------------------------
+((s10)) Details about Frob genetics and reproduction
+
+((s10.0)) Each Frob has a `Genome'.  The Genome contains an array
+of unsigned characters, its `DNA'.
+
+((s10.1)) Layout of DNA.  Names for (most of) the bytes of dna,
+and its overall size, is given by:
+
+ enum {		// Names of dna fields
+   DNABIRTHMASS=0,	// dna[0] controls birthmass (s10.2.2.1)
+   DNABIRTHFRAC=1,	// dna[1] controls birthfrac (s10.2.2.2)
+   DNAUPDINTERVAL=2,	// dna[2] controls updinterval (s10.2.2.3)
+   DNANORTHPREFS=3,	// dna[3..6] controls north prefs (s10.3.2)
+     DNAEMPTYOFFSET=0,	// so,e.g., dna[DNANORTHPREFS+DNAROCKOFFSET]
+     DNAROCKOFFSET=1,	//  is how much this frob likes to move
+     DNAGRASSOFFSET=2,	//  north when there's a rock there
+     DNAFROBOFFSET=3,	//  likewise for empty, grass, another frob
+   DNASOUTHPREFS=7,	// base index for south preferences (s10.3.2)
+   DNAEASTPREFS=11,	//  ditto, east (s10.3.2)
+   DNAWESTPREFS=15,	//  ditto, west (s10.3.2)
+   DNALEN=19            // OVERALL LENGTH OF DNA
+ } ;
+
+((s10.2)) The exact rules by which the DNA determines the 'birth
+properties' -- update interval, birth mass, and birth fraction --
+of a new Frob are given in (s10.2.2).
+
+((s10.2.1)) (This section intentionally left blank).
+
+((s10.2.2)) FrobWorld:2K version 1.0 rules for determining Birth
+Properties from dna.  These rules may change in detail as more
+simulation experience is gained -- for example, the specific
+numbers may change, or a '%' might become a '/' or vice-versa --
+but they will NOT change to depend on other information.  Only
+one byte of dna, plus numeric constants and arithmetic operators,
+will be involved in each rule.
+
+((s10.2.2.1)) Frob int BirthMass:   dna[DNABIRTHMASS]+20
+
+((s10.2.2.2)) Frob float BirthFrac: dna[DNABIRTHFRAC]/255.0*.8+.1
+
+((s10.2.2.3)) Frob int UpdateInterval:  dna[DNAUPDINTERVAL]/2+1
+
+((s10.3)) Rules for determining Frob choice of action.
+
+((s10.3.1)) A Frob acts in FrobWorld:2K by choosing a direction
+from NORTH, SOUTH, EAST, or WEST, and then attempting to move in
+that direction.  Whether or not the move actually occurs, and in
+general what happens when a move attempt is made, is described in
+(s6.2.3.2).
+
+((s10.3.2)) There are four 'segments' of DNA involved in action
+selection, one segment for each possible move direction.  They are
+called the 'prefs' segments, because they determine a frob's
+'preferences' for moving in that direction.
+
+((s10.3.2.1)) The beginnings of the prefs segments are at indices
+DNANORTHPREFS, DNASOUTHPREFS, DNAEASTPREFS, and DNAWESTPREFS
+(s10.1).  Each prefs segment is four bytes long, and the four
+bytes within a segment are named DNAEMPTYOFFSET, DNAROCKOFFSET,
+DNAGRASSOFFSET, and DNAFROBOFFSET (s10.1).
+
+((s10.3.2.2)) So, for example dna[DNANORTHPREFS+DNAROCKOFFSET]
+contains the Frob's genetic preference for moving North when there
+is a rock in the next location North (hopefully that would evolve
+to be a small value), while dna[DNAWESTPREFS+DNAEMPTYOFFSET]
+contains its preference for moving West when there is nothing in
+the next location West.
+
+((s10.3.2.3)) Overall, therefore, there are sixteen bytes of
+genetic information *potentially* involved in Frob action
+selection -- four directions by four possible contents of the
+location in that direction.
+
+((s10.3.2.4)) In any *specific* Frob action selection, only four
+of those bytes are relevant, one each from the north, south, east,
+and west prefs segments, depending on what is *actually* in those
+neighboring locations.
+
+((s10.3.3)) So to select an action, the frob performs the
+following steps.
+
+((s10.3.3.1)) Examine the neighborhood and find out what is in
+each location -- EMPTY, ROCK, GRASS, or FROB.
+
+((s10.3.3.2)) Look up the corresponding values in its prefs
+segments, and add 1 to each.  This produces a 'current
+preferences' of four numbers, one number each for North, South,
+East, and West, and with each number ranging 1..256.
+
+((s10.3.3.3)) Pick a direction at random *weighted* by the four
+directional preference values.  That direction is the selected
+action.
+
+((s10.3.3.3.1)) For example, suppose a Frob's prefs segments have
+the following values:
+
+ NORTH: EMPTY 64   ROCK 123   GRASS 6	FROB 97
+ SOUTH: EMPTY 38   ROCK 12    GRASS 201	FROB 59
+ EAST:  EMPTY 0	   ROCK 37    GRASS 195	FROB 159
+ WEST:  EMPTY 101  ROCK 3     GRASS 7    FROB 251
+
+((s10.3.3.3.2)) If the Frob examines its neighborhood and finds a
+Grass to the North and the rest all empty, then its current
+preferences would be (7,39,1,102) for (North, South, East, West).
+
+((s10.3.3.3.3)) The Frob now needs to select an action at random
+but weighted by its current preferences.  This can be done by
+
+((s10.3.3.3.3.1)) summing up the current preferences (yielding
+		  7+39+1+102=149 in the example);
+
+((s10.3.3.3.3.2)) choosing a random number from
+		  0..<sum-of-prefs>-1 (in the example, 0..148,
+		  with the random call yielding, say, 57); and
+
+((s10.3.3.3.3.3)) decrementing the chosen random number by each
+	          directional preference value in turn and
+	          selecting the direction that made the
+	          decremented value negative (so, 57-7 -> 50>=0,
+	          so North isn't selected; then 50-39 -> 11>=, so
+	          South isn't selected; then 11-1 ->10>=0, so East
+	          isn't selected; then 10-102 -> -92<0, so West is
+	          selected).
+
+((s10.4)) Frob DNA inheritance and mutation
+
+((s10.4.1)) When a 'parent' Frob splits to create an 'offspring'
+Frob, the offspring Frob gets a copy of the parent's dna, but it
+is not necessarily an exact copy -- there may be errors
+introduced, 'mutations' that cause the offspring to have somewhat
+different properties than the parent.
+
+((s10.4.2)) Mutation can be implemented by first copying the
+parent dna to the offspring exactly, and then 'messing it up a
+bit' in a specific way.
+
+((s10.4.3)) Mutation is governed by a single parameter:
+DNAMUTATIONODDSPERBYTE (s8.2).  Assuming the offspring Frob now
+has an exact copy of the parent dna, the parameter is used as
+follows:
+
+((s10.4.4)) For each of the DNALEN bytes of offspring dna, a
+random number from 0..DNAMUTATIONODDSPERBYTE-1 is drawn.  If the
+number drawn == 0, then a mutation occurs in that byte, otherwise
+it remains equal to the corresponding byte in the parent dna.  If
+a mutation does occur, then exactly one of the 8 bits in the byte,
+chosen at random, is flipped.
+
+((s10.4.5)) Note that the 'birth properties' of an offspring Frob
+(s10.2.2) depend on the offspring's dna *after mutation has been
+performed*.  In other words, the offspring dna must be copied and
+mutated from the parent dna *before* the offspring's birthmass,
+birthfrac, and updateinterval are computed.
+
+-------------------------------------------------
+((s11)) Deliverables
+
+((s11.1)) All files needed to build fw2k.  This specifically
+includes an appropriate Makefile, as well as all necessary .C and
+.h files.
+
+((s11.1.1)) It must be the case that simply saying 'make' in the
+directory containing your project files suffices to build your
+'fw2k' program.
+
+((s11.2)) A README.txt file must also be included.
+
+ ((s11.2.1)) In addition to the usual information, the README.txt
+  file should also contain your answers to the questions posed in
+  (s1.1.1) and (s1.1.2).
+
+-------------------------------------------------
+((s12)) Available resources
+
+((s12.1)) A 'resources' file will be available on the project
+website containing this spec and other useful files.
+
+((s12.2)) In particular, it will contain a program called
+'fw2k.tcl', that can be used to run your fw2k engine and
+provide a graphical user interface to it. 
+
+((s12.2.1)) The 'fw2k.tcl' requires a script interpreter
+called 'wishx' (note, NOT just 'wish').  The UNM CS 'city'
+boxes have an appropriate version of wishx installed.
+
+((s12.3)) The resources file will also contain one or more 'diff'
+files showing all the changes between early spec versions and the
+current version.  This can help highlight changes that may affect
+your code.
+
+-------------------------------------------------
+((s13)) Document Information
+
+((s13.1)) This is Version 0.9 of the FrobWorld:2K document,
+released Sat Mar 1 07:05:20 2003.
+
+((s13.2)) Version 0.9.1 started Sun Mar 2 08:35:00 2003.
+
+((s13.2.1)) Fix typoes in (s6.2.2.2.6.3) and (s6.2.2.2.6.4).  (Tx:
+mo777).  (s6.2.2.2.6.3) has been basically rewritten
+
+((s13.2.2)) Fix typoes ahead of (s1), and in (s1.2.1), (s4.2.1),
+(s7.2.4.2.1), (s7.2.5.3.1), and (s7.3.5.1).  (Tx: rlpm). 
+
+((s13.2.3)) Fix typoe in (s6.2.2.2.4). (Tx: kwiley).
+
+((s13.2.4)) Fix typoe in (s7.2.5.4.1). (Tx: mmdolan). 
+
+((s13.2.5)) PARAMETER VALUE CHANGES:
+
+ ((s13.2.5.1)) The value of FROBFIXEDOVERHEAD is changed to 1.
+  Affects (s6.2.3.2.1) and (s8.2).
+
+ ((s13.2.5.2)) The value of FROBMASSTAX is increased to 0.15.
+  Affects (s6.2.3.2.1) and (s8.2).
+
+((s13.2.6)) (Version 0.9.1 changes folded into version 1.0.0.
+Version 0.9.1 not independently released.)
+
+((s13.3)) Version 1.0.0 started Sun Mar  9 12:29:32 2003 
+
+((s13.3.1)) MAJOR ADDITIONS AND CHANGES IN VERSION 1.0.0:
+
+((s13.3.1.1)) (s9) presenting asymptotic resource bounds is ADDED.
+
+((s13.3.1.2)) The syntax and behavior of 'extinct' events
+(s7.3.7) is CHANGED.
+
+((s13.3.1.3)) The syntax and behavior of the 'step' command
+(s7.2.5) is CHANGED.
+
+((s13.3.1.4)) The order of the event values in the 'new grass'
+event format (s7.3.3.2.1) is CHANGED.
+
+((s13.3.1.5)) A new command, the 'dump' command (s7.2.7), is
+ADDED.
+
+((s13.3.1.6)) A new event, the 'world' event (s7.3.8), is ADDED.
+
+((s13.3.2)) Spec version 1.0.0 released Mon Mar 10 02:28:24 2003. 
