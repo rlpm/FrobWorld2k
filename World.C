@@ -17,11 +17,11 @@
 
 // ctor
 // pass values to base initializers, then GO!
-World::World(istream &i, ostream &o, ostream &e):_date(0),_interval(1),
-                                                 _g(NULL),_pq(NULL),
-                                                 _frobs(0),
-                                                 _in(i),_out(o),_err(e),
-                                                 _dbgout(0) {
+World::World(std::istream &i, std::ostream &o, std::ostream &e):_date(0),_interval(1),
+                                                                _g(NULL),_pq(NULL),
+                                                                _frobs(0),
+                                                                _in(i),_out(o),_err(e),
+                                                                _dbgout(0) {
   Go();
 }
 
@@ -41,7 +41,7 @@ void World::DumpGrid() {
   y = _g->_max_y;
   _out << " ";
   for (j=0;j<x;j++) _out << j%10;
-  _out << endl;
+  _out << std::endl;
   for (i=0;i<y;i++) {
     _out << i%10;
     for (j=0;j<x;j++) {
@@ -49,7 +49,7 @@ void World::DumpGrid() {
       else if ((c = dynamic_cast<Frob*>(_g->Peek(j,i)))) _out << "\001";
       else _out << " ";
     }
-    _out << endl;
+    _out << std::endl;
   }
 }
 
@@ -93,7 +93,7 @@ bool World::Init(size_t cols, size_t rows, size_t seed, size_t frobs,
     else c = new Frob(this);
     _pq->Push(c);
     if (!_g->PlaceRandom(c)) {
-      _err << "Too many Creatures!!!" << endl;
+      _err << "Too many Creatures!!!" << std::endl;
       Clear();
       return false;
     }
@@ -109,12 +109,12 @@ bool World::Init(size_t cols, size_t rows, size_t seed, size_t frobs,
 void World::OutputReset(size_t cols, size_t rows, size_t seed, size_t frobs,
                         size_t grasses) {
   _out << "reset { " << cols << " " << rows << " " << seed << " ";
-  _out << frobs << " " << grasses << " }" << endl;
+  _out << frobs << " " << grasses << " }" << std::endl;
 }
 
 // send the clock event
 void World::OutputClock() {
-  _out << "clock { " << _date << " }" << endl;
+  _out << "clock { " << _date << " }" << std::endl;
 }
 
 // send the extinct event
@@ -128,7 +128,7 @@ void World::OutputExtinct() {
   _out << "extinct { " << _date << " " << TotalFrobs() << " ";
 
   if (!_g || !TotalFrobs()) {
-    _out << "}" << endl;
+    _out << "}" << std::endl;
     return;
   }
 
@@ -136,7 +136,7 @@ void World::OutputExtinct() {
 
   // first, dump all values into a vector
   size_t i, j, x=_g->_max_x, y=_g->_max_y;
-  vector<size_t> vals;
+  std::vector<size_t> vals;
   for (i=0;i<y;i++) {
     for (j=0;j<x;j++) {
       Frob *f;
@@ -162,7 +162,7 @@ void World::OutputExtinct() {
   double stddev=sqrt(variant_sum/vals.size());
 
   // send them to the output stream
-  _out << avg << " " << stddev << " }" << endl;
+  _out << avg << " " << stddev << " }" << std::endl;
 }
 
 // send the world event (dumping the clock and all the creatures)
@@ -181,7 +181,7 @@ void World::OutputWorld() {
       }
     }
   }
-  _out << "}" << endl;
+  _out << "}" << std::endl;
 }
 
 // read input commands and act accordingly 
@@ -190,20 +190,20 @@ void World::OutputWorld() {
 // outputs the grid, respectively
 void World::Go() {
   while (_in.good()) {
-    string cmd;
+    std::string cmd;
     size_t args[5];
     _in >> cmd;
     if (cmd == "init") { // init command from spec
       for(int i=0;i<5;i++)
         _in >> args[i];
       if (!Init(args[0],args[1],args[2],args[3],args[4])) {
-        _err << "Init failed" << endl;
+        _err << "Init failed" << std::endl;
       }
     } else if (cmd == "step") { // step command from spec
       for(int i=0;i<2;i++)
         _in >> args[i];
       if (args[1] && args[1]!=1)
-        _err << "Illegal input" << endl;
+        _err << "Illegal input" << std::endl;
       else
         Step(args[0],args[1]);
     } else if (cmd == "quit") { // quit command from spec
@@ -211,7 +211,7 @@ void World::Go() {
     } else if (cmd == "interval") { // interval command from spec
       _in >> args[0];
       if (!args[0])
-        _err << "Illegal input" << endl;
+        _err << "Illegal input" << std::endl;
       else
         _interval = args[0];
     } else if (cmd == "rlpm") { // toggle debug output
@@ -223,7 +223,7 @@ void World::Go() {
     } else {
       if (_in.eof())
         break;
-      _err << "Unknown command" << endl;
+      _err << "Unknown command" << std::endl;
     }
   }
 }    
@@ -284,7 +284,7 @@ void World::Step(size_t steps, bool display) {
       // debug output
       if (_dbgout) {
         DumpGrid();
-        _out << "Frobs: " << TotalFrobs() << endl;
+        _out << "Frobs: " << TotalFrobs() << std::endl;
       }
     }
   }
