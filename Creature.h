@@ -19,7 +19,7 @@ class World;
 class Creature : public PQable, public GridAble, public WorldAble {
 public:
 
-  Creature(World *w, ostream &o=cout); // ctor
+  Creature(World *w, std::ostream &o=std::cout); // ctor
   virtual ~Creature(); // dtor
 
   // Get the mass
@@ -55,7 +55,7 @@ protected:
   void SetUpdateVal(size_t);
 
   // Get the output stream
-  ostream& GetO();
+  std::ostream& GetO();
 
 private:
 
@@ -70,7 +70,7 @@ private:
   size_t _updatevalue;
 
   // output stream to print stuff to
-  ostream &_out;
+  std::ostream &_out;
 
 };
 

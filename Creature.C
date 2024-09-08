@@ -10,10 +10,10 @@
 
 // ctor
 // just base to base initializers
-Creature::Creature(World *w, ostream &o) : PQable(), GridAble(),
-                                           WorldAble(w),
-                                           _mass(0), _updatevalue(0),
-                                           _out(o) {}
+Creature::Creature(World *w, std::ostream &o) : PQable(), GridAble(),
+                                                WorldAble(w),
+                                                _mass(0), _updatevalue(0),
+                                                _out(o) {}
 
 // dtor
 // nothing to do - taken care of by base and derived classes
@@ -45,7 +45,7 @@ void Creature::SetUpdateVal(size_t u) {
 void Creature::OutputNew() {
   GetO() << "new { ";
   OutputVals();
-  GetO() << "}" << endl;
+  GetO() << "}" << std::endl;
 }
 
 // output the "kill" event for this creature
@@ -53,7 +53,7 @@ void Creature::OutputNew() {
 void Creature::OutputKill() {
   GetO() << "kill { ";
   OutputVals();
-  GetO() << "}" << endl;
+  GetO() << "}" << std::endl;
 }
 
 // output the "move" event for this creature
@@ -61,7 +61,7 @@ void Creature::OutputKill() {
 // call the (virtual) OutputVals method
 void Creature::OutputMove(size_t x, size_t y, size_t nx, size_t ny) {
   GetO() << "move { " << x << " " << y << " ";
-  GetO() << nx << " " << ny << " }" << endl;
+  GetO() << nx << " " << ny << " }" << std::endl;
 }
 
 // output the piece of the "world" event for this creature
@@ -73,6 +73,6 @@ void Creature::OutputDump() {
 }
 
 // return the output stream on which to output stuff
-ostream& Creature::GetO() {
+std::ostream& Creature::GetO() {
   return _out;
 }
