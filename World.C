@@ -45,8 +45,8 @@ void World::DumpGrid() {
   for (i=0;i<y;i++) {
     _out << i%10;
     for (j=0;j<x;j++) {
-      if ((c = dynamic_cast<Grass*>(_g->Peek(j,i)))) _out << "#";
-      else if ((c = dynamic_cast<Frob*>(_g->Peek(j,i)))) _out << "\001";
+      if ((c = dynamic_cast<Grass*>(_g->Peek(j,i)))) _out << "-";
+      else if ((c = dynamic_cast<Frob*>(_g->Peek(j,i)))) _out << "@";
       else _out << " ";
     }
     _out << std::endl;
