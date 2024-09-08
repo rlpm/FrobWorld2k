@@ -21,7 +21,7 @@ const float Frob::MASSTAX = .15;
 // ctor
 // setup the mass and genome, set a priority from the genome,
 // and increment the world's total frob count
-Frob::Frob(World *w, ostream &o) : Creature(w,o) {
+Frob::Frob(World *w, std::ostream &o) : Creature(w,o) {
   SetMass(GENESISMASS);
   _genome.Randomize();
   SetPriority(random()%(GetUpdateVal()+1));
@@ -32,7 +32,7 @@ Frob::Frob(World *w, ostream &o) : Creature(w,o) {
 // create this frob as a child of the parent frob, placing it into the
 // grid, mutating the genome, reducing the parent's mass, scheduling
 // it into the PQueue, and incrementing the World's total frob count.
-Frob::Frob(Frob &parent, size_t x, size_t y, World *w, ostream &o)
+Frob::Frob(Frob &parent, size_t x, size_t y, World *w, std::ostream &o)
   : Creature(w,o) {
   parent.GetGrid()->Place(this,x,y);
   _genome = parent._genome;
@@ -247,7 +247,7 @@ void Frob::DNA::Mutate() {
 }
 
 // output the genome
-void Frob::DNA::Output(ostream &o) {
+void Frob::DNA::Output(std::ostream &o) {
   for (int i=0;i<LEN;i++)
     o << static_cast<int>(_data[i]) << " ";
 }
