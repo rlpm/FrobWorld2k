@@ -6,7 +6,7 @@
 
 // include system headers
 #include <stddef.h>   // for size_t
-#include <iostream.h> // for ostream
+#include <ios> // for ostream
 
 #include "Creature.h"
 #include "Grid.h"

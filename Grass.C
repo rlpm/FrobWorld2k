@@ -4,7 +4,7 @@
 // include system headers
 #include <stddef.h>   // for size_t
 #include <stdlib.h>   // for random
-#include <iostream.h> // for ostream
+#include <iostream> // for ostream
 #include <assert.h>
 #include <vector>
 
