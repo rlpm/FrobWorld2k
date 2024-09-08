@@ -2,8 +2,12 @@
 
 CONTACT INFORMATION
  Project author:  Rory L.P. McGuire
- Email:           rlpm@unm.edu
- Date:            Mon Mar 31 2003 05:40:47 MST (GMT-0700)
+ Email:           63247836+rlpm@users.noreply.github.com
+ Date:            Sun Sep 08 2024 17:07:33 MST (GMT-0600)
+
+NOTES FOR 2024-09-08 REVISION
+  I have not gone over this README in detail, some of it may no longer
+  be relevant, or may reflect the March 2003 version of things.
 
 PROJECT DESCRIPTION
 
@@ -13,7 +17,7 @@ PROJECT DESCRIPTION
  description.
 
  Shipping manifest: 
-  Contained in the distribution you will find the following files:
+  Contained in the repo you will find the following files:
    Creature.[Ch]  - A base class to help all types of simulated entities
                   + Derives from PQable, GridAble and WorldAble
    Frob.[Ch]      - A class to simulate Frob entities
@@ -36,7 +40,7 @@ PROJECT DESCRIPTION
                   + in s1.1 of the spec.
 
  How to build:
-  (1) Unpack the tar file into an empty directory
+  (1) Clone this git repo
   (2) cd to that directory
   (3) Type 'make' to build fw2k
       Please note: this will complain about non-existant file
