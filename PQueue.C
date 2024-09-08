@@ -151,11 +151,11 @@ void PQueue::swap(size_t a, size_t b) {
 }
 
 void PQueue::dump() const {
-  cout << "Size: " << Size() << endl;
+  std::cout << "Size: " << Size() << std::endl;
   for (size_t i=1;i<_array.size();i++) {
-    cout << setw(3) << i << ":" << setw(3) << _array[i]->GetPQLoc() << " "
-         << setw(3) << _array[i]->GetPriority()
-         << " " << _array[i] << endl;
+    std::cout << std::setw(3) << i << ":" << std::setw(3) << _array[i]->GetPQLoc() << " "
+              << std::setw(3) << _array[i]->GetPriority()
+              << " " << _array[i] << std::endl;
   }
-  cout << "---------------------" << endl;
+  std::cout << "---------------------" << std::endl;
 }

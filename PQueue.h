@@ -50,7 +50,7 @@ private:
   void swap(size_t,size_t);
 
   // The heap array
-  vector<PQable*> _array;
+  std::vector<PQable*> _array;
 };
 
 #endif // PQUEUE_H
