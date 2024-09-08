@@ -15,7 +15,7 @@
 class Grass: public Creature {
 public:
 
-  Grass(World *w, ostream &o=cout); // ctor
+  Grass(World *w, std::ostream &o=std::cout); // ctor
   virtual ~Grass(); // dtor
 
   // Live a little

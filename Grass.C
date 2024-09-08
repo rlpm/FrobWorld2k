@@ -21,7 +21,7 @@ const float Grass::MASSFACTOR = .20;
 
 // ctor
 // set the updateval, and randomize the priority and mass
-Grass::Grass(World *w, ostream &o) : Creature(w,o) {
+Grass::Grass(World *w, std::ostream &o) : Creature(w,o) {
   SetUpdateVal(INITIALUPDATEINTERVAL);
   SetMass(random()%GENESISMASS);
   SetPriority(random()%GetUpdateVal());
@@ -59,7 +59,7 @@ bool Grass::TurnToLive(bool display) {
 // try to birth a grass
 bool Grass::TryBirth(bool display) {
   size_t buddies = 0;
-  vector<Grid::direction> open; // keep track of open locations
+  std::vector<Grid::direction> open; // keep track of open locations
   grok tmp;
 
   // look around to see what's there

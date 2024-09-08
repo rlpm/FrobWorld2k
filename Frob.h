@@ -19,7 +19,7 @@ class Grass;
 class Frob: public Creature {
 public:
 
-  Frob(World *w, ostream &o=cout); // ctor
+  Frob(World *w, std::ostream &o=std::cout); // ctor
   virtual ~Frob(); // dtor
 
   // Get the UpdateVal
@@ -40,7 +40,7 @@ private:
   void operator=(const Frob &);
 
   // build a child frob, but don't want a copy constructor
-  Frob(Frob &parent, size_t x, size_t y, World *w, ostream &o=cout);
+  Frob(Frob &parent, size_t x, size_t y, World *w, std::ostream &o=std::cout);
 
   // How much this Frob likes to move in a direction depending on
   // what's there
@@ -105,7 +105,7 @@ private:
     void Mutate();
 
     // Output the values
-    void Output(ostream &);
+    void Output(std::ostream &);
 
   private:
 

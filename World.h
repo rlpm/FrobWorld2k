@@ -16,7 +16,7 @@ class PQueue;
 class World {
 public:
 
-  World(istream &i=cin, ostream &o=cout, ostream &e=cerr); // ctor
+  World(std::istream &i=std::cin, std::ostream &o=std::cout, std::ostream &e=std::cerr); // ctor
   ~World(); // dtor
 
   // needed to birth creatures, since they're not in the PQ when they
@@ -68,9 +68,9 @@ private:
 
   size_t _frobs;
 
-  istream &_in;
-  ostream &_out;
-  ostream &_err;
+  std::istream &_in;
+  std::ostream &_out;
+  std::ostream &_err;
 
   bool _dbgout; // for testing
 
